@@ -5,7 +5,7 @@ import { unionize, ofType, UnionOf } from "unionize";
 /**
  * Valid props for LazyImage components
  */
-export type CommonLazyImageProps = ImageProps & {
+export type CommonLazyImageProps = PictureProps & {
   // NOTE: if you add props here, remember to destructure them out of being
   // passed to the children, in the render() callback.
 
@@ -46,7 +46,7 @@ export interface LazyImageFullProps extends CommonLazyImageProps {
 /** Values that the render props take */
 export interface RenderCallbackArgs {
   imageState: ImageState;
-  imageProps: ImageProps;
+  imageProps: PictureProps;
   /** When not loading eagerly, a ref to bind to the DOM element. This is needed for the intersection calculation to work. */
   ref?: React.RefObject<any>;
 }
@@ -63,6 +63,25 @@ export interface ImageProps {
 
   /** Sizes descriptor */
   sizes?: string;
+}
+
+export interface SourceProps {
+  /** Media query of the resource's intended media */
+  media?: string;
+
+  /** Sizes descriptor of fallback image */
+  sizes?: string;
+
+  /** The MIME-type of the resource */
+  type?: string;
+
+  /** Set of possible images represented by the source */
+  srcSet?: string;
+}
+
+export type PictureProps = ImageProps & {
+  /** Picture sources */
+  sources?: Array<SourceProps>
 }
 
 /** Subset of react-intersection-observer's props */
@@ -151,12 +170,12 @@ const getBufferingCmd = (durationMs: number): Cmd => instance => {
 
 /** Get a command that sets an image loading Promise */
 const getLoadingCmd = (
-  imageProps: ImageProps,
+  imageProps: PictureProps,
   experimentalDecode?: boolean
 ): Cmd => instance => {
   // Make cancelable loading Promise
   const loadingPromise = makeCancelable(
-    loadImage(imageProps, experimentalDecode)
+    loadPicture(imageProps, experimentalDecode)
   );
 
   // Kick off request for Image and attach listeners for response
@@ -358,39 +377,67 @@ export class LazyImageFull extends React.Component<
 
 ///// Utilities /////
 
-/** Promise constructor for loading an image */
-const loadImage = (
-  { src, srcSet, alt, sizes }: ImageProps,
+/** Promise constructor for loading a picture or an image */
+const loadPicture = (
+  { sources, ...imgProps }: PictureProps,
   experimentalDecode = false
 ) =>
   new Promise((resolve, reject) => {
-    const image = new Image();
-    if (srcSet) {
-      image.srcset = srcSet;
+    const picture = document.createElement('picture');
+
+    if (Array.isArray(sources)) {
+      sources.forEach(s => {
+        const source = document.createElement('source');
+
+        if (s.media) {
+          source.media = s.media;
+        }
+        if (s.sizes) {
+          source.sizes = s.sizes;
+        }
+        if (s.srcSet) {
+          source.srcset = s.srcSet;
+        }
+        if (s.type) {
+          source.type = s.type;
+        }
+
+        picture.appendChild(source);
+      });
     }
-    if (alt) {
-      image.alt = alt;
+
+    const img = document.createElement('img');
+
+    if (imgProps.alt) {
+      img.alt = imgProps.alt;
     }
-    if (sizes) {
-      image.sizes = sizes;
+    if (imgProps.sizes) {
+      img.sizes = imgProps.sizes;
     }
-    image.src = src;
+    if (imgProps.src) {
+      img.src = imgProps.src;
+    }
+    if (imgProps.srcSet) {
+      img.srcset = imgProps.srcSet;
+    }
+
+    picture.appendChild(img);
 
     /** @see: https://www.chromestatus.com/feature/5637156160667648 */
-    if (experimentalDecode && "decode" in image) {
+    if (experimentalDecode && "decode" in img) {
       return (
-        image
+        img
           // NOTE: .decode() is not in the TS defs yet
           // TODO: consider writing the .decode() definition and sending a PR
           //@ts-ignore
           .decode()
           .then((image: HTMLImageElement) => resolve(image))
-          .catch((err: any) => reject(err))
+          .catch(reject)
       );
     }
 
-    image.onload = resolve;
-    image.onerror = reject;
+    img.onload = resolve;
+    img.onerror = reject;
   });
 
 /** Promise that resolves after a specified number of ms */
