@@ -1,5 +1,5 @@
 {
-  "name": "react-lazy-images",
+  "name": "@oopscurity/react-lazy-images",
   "description": "React utilities for lazy image loading",
   "version": "1.1.0",
   "source": "src/index.tsx",
@@ -20,7 +20,7 @@
     "storybook:deploy": "storybook-to-ghpages --existing-output-dir=.out",
     "test": "npm run build",
     "size": "bundlesize",
-    "release": "npm t && git commit -am $npm_package_version && git tag $npm_package_version && git push && git push --tags && npm publish"
+    "release": "npm t && git commit -am $npm_package_version && git tag $npm_package_version && git push && git push --tags && npm publish --access public"
   },
   "bundlesize": [
     {
@@ -56,14 +56,14 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/fpapado/react-lazy-images.git"
+    "url": "git+https://github.com/Oopscurity/react-lazy-images.git"
   },
-  "author": "Fotis Papadogeorgopoulos",
+  "author": "Artem Kravchenko",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/fpapado/react-lazy-images/issues"
+    "url": "https://github.com/Oopscurity/react-lazy-images/issues"
   },
-  "homepage": "https://github.com/fpapado/react-lazy-images#readme",
+  "homepage": "https://github.com/Oopscurity/react-lazy-images#readme",
   "dependencies": {
     "react-intersection-observer": "^6.1.0",
     "unionize": "^2.1.2"
